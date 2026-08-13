@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>예약 정보</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #fffdf9;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            color: #5c3d2e;
+            margin-bottom: 28px;
+            font-size: 24px;
+        }
+
+        .info {
+            margin-bottom: 24px;
+        }
+
+        .info p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 4px;
+        }
+
+        .back,
+        .cancel-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+            transition: background-color 0.2s ease;
+        }
+
+        .back {
+            background-color: #5c3d2e;
+            color: white;
+        }
+
+        .back:hover {
+            background-color: #3d291f;
+        }
+
+        .cancel-btn {
+            background-color: #a9744f;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 16px;
+        }
+
+        .cancel-btn:hover {
+            background-color: #8a5d3d;
+        }
+
+        .used-status {
+            display: inline-block;
+            margin-left: 16px;
+            font-size: 15px;
+            font-weight: bold;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>📋 예약 정보</h2>
+
+    <div class="info">
+        <p><span class="label">🏨 숙소명:</span> <span th:text="${reservation.accommodation.name}">숙소명</span></p>
+        <p><span class="label">📍 위치:</span> <span th:text="${reservation.accommodation.location}">위치</span></p>
+        <p><span class="label">🗓 체크인:</span> <span th:text="${reservation.checkInDate}">2025-01-01</span></p>
+        <p><span class="label">🗓 체크아웃:</span> <span th:text="${reservation.checkOutDate}">2025-01-03</span></p>
+        <p><span class="label">👥 인원 수:</span> <span th:text="${reservation.guestCount}">2</span> 명</p>
+        <p><span class="label">💰 총 금액:</span> ₩<span th:text="${#numbers.formatDecimal(reservation.totalPrice, 0, 'COMMA', 0, 'POINT')}">100,000</span></p>
+    </div>
+
+    <a href="/reservations/my" class="back">← 예약 목록으로</a>
+
+    <!-- ✅ 예약 취소: 체크인 날짜가 오늘보다 미래일 때만 -->
+    <form th:if="${reservation.checkInDate > T(java.time.LocalDate).now()}"
+          th:action="@{'/reservations/' + ${reservation.id} + '/cancel'}"
+          method="post" style="display:inline;">
+        <button type="submit" class="cancel-btn">예약 취소</button>
+    </form>
+
+    <!-- 🛌 숙박 중: 체크인 ≤ 오늘 < 체크아웃 -->
+    <span th:if="${reservation.checkInDate <= T(java.time.LocalDate).now()} and ${reservation.checkOutDate > T(java.time.LocalDate).now()}"
+          class="used-status">
+        🛌 숙박 중
+    </span>
+
+    <!-- 🏁 사용 완료: 체크아웃 날짜가 오늘보다 이전이거나 오늘 -->
+    <span th:if="${reservation.checkOutDate <= T(java.time.LocalDate).now()}" class="used-status">
+        🏁 사용 완료
+    </span>
+</div>
+</body>
+</html>

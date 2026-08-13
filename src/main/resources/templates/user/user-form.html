@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>회원 가입</title>
+</head>
+<body>
+<h2>회원 가입</h2>
+
+<!-- 공통 에러 메시지 -->
+<p th:if="${errorMessage}" th:text="${errorMessage}" style="color:red;"></p>
+
+<form th:action="@{/users/new}" th:object="${user}" method="post">
+    이메일: <input type="text" th:field="*{email}" required /><br/>
+    <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color:red;"></p>
+
+    비밀번호: <input type="password" th:field="*{password}" required /><br/>
+    <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" style="color:red;"></p>
+
+    이름: <input type="text" th:field="*{name}" required /><br/>
+    <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" style="color:red;"></p>
+
+    닉네임: <input type="text" th:field="*{nickname}" required /><br/>
+    <p th:if="${#fields.hasErrors('nickname')}" th:errors="*{nickname}" style="color:red;"></p>
+
+    역할: <input type="text" th:field="*{role}" required placeholder="guest or host"/><br/>
+    <p th:if="${#fields.hasErrors('role')}" th:errors="*{role}" style="color:red;"></p>
+
+    <button type="submit">가입</button>
+</form>
+</body>
+</html>

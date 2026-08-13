@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>작성한 후기</title>
+  <style>
+    :root{
+      --bg:#FFFCF7; --card:#FFFFFF; --ink:#3A2F28; --muted:#9B8579;
+      --star:#FFA71B; --soft:#EEDFD6; --shadow:0 8px 22px rgba(0,0,0,.06);
+      --r:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:32px 20px; background:var(--bg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Malgun Gothic,sans-serif;
+      color:var(--ink)
+    }
+    h1{margin:0 0 6px 0; font-size:30px; letter-spacing:-.3px}
+    .subtitle{color:var(--muted); margin-bottom:16px; font-size:14px}
+
+    .top-actions{position:sticky; top:12px; float:right}
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+      background:#CBA38F; color:#fff; text-decoration:none; border:none; border-radius:999px;
+      font-weight:600; box-shadow:var(--shadow)
+    }
+
+    /* ====== 2열 그리드 레이아웃 ====== */
+    .list{
+      display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:14px; margin-top:8px
+    }
+    @media (max-width:860px){ .list{grid-template-columns:1fr} }
+
+    /* ====== 카드 ====== */
+    .card{
+      background:var(--card); border-radius:18px; box-shadow:var(--shadow);
+      padding:14px; display:grid; grid-template-columns:64px 1fr auto;
+      gap:12px; align-items:start; min-height:100px;
+    }
+    .thumb{
+      width:64px; height:64px; border-radius:12px; overflow:hidden;
+      background:#EAE4DE; display:grid; place-items:center
+    }
+    .thumb img{width:100%; height:100%; object-fit:cover; display:block}
+
+    .title-line{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+    .name{font-size:18px; font-weight:800; letter-spacing:-.2px; color:#3D2E8A; text-decoration:none}
+    .name:hover{text-decoration:underline}
+
+    .stars{display:inline-flex; gap:4px; transform:translateY(-1px)}
+    .star{font-size:16px; line-height:1; color:var(--star)}
+    .star--empty{color:#E9DCD2}
+
+    .meta-right{display:flex; align-items:center; gap:10px}
+    .date{color:var(--muted); font-size:13px}
+    .btn-del{
+      background:#CFA189; color:#fff; border:none; border-radius:10px;
+      padding:6px 10px; font-weight:700; cursor:pointer
+    }
+
+    /* 본문은 2~3줄로 줄임 */
+    .content-box{
+      grid-column:1 / -1; margin-top:8px; border:1px solid var(--soft); border-radius:12px;
+      padding:10px 12px; font-size:14px; line-height:1.55; background:#fff;
+      display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+    }
+
+    .empty{
+      padding:18px; background:var(--card); border:1px dashed var(--soft);
+      border-radius:12px; color:var(--muted)
+    }
+
+    /* 모바일 압축 */
+    @media (max-width:720px){
+      body{padding:22px 14px}
+      .card{grid-template-columns:56px 1fr auto; gap:10px}
+      .thumb{width:56px; height:56px; border-radius:10px}
+      .name{font-size:16px}
+      .star{font-size:15px}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-actions">
+    <a th:href="@{/users/mypage}" class="btn">마이페이지로</a>
+  </div>
+
+  <h1>작성한 후기</h1>
+  <!-- 🔧 닉네임 없으면 이름으로 대체 -->
+  <div class="subtitle"
+       th:text="${(user.nickname != null ? user.nickname : user.name)} + '님이 작성한 후기 목록입니다.'">
+    후기 설명
+  </div>
+
+  <!-- 비어있을 때 -->
+  <div th:if="${#lists.isEmpty(reviews)}" class="empty">
+    아직 작성한 후기가 없습니다. 숙소 이용 후 첫 후기를 남겨보세요!
+  </div>
+
+  <!-- 후기 카드 리스트 (2열) -->
+  <div class="list" th:if="${!#lists.isEmpty(reviews)}">
+    <div class="card" th:each="rv : ${reviews}"
+         th:with="raw=${rv.rating},
+                  r=${raw == null ? 0 : (raw < 0 ? 0 : (raw > 5 ? 5 : raw))}">
+      <!-- 썸네일: thumbnailUrl 우선 사용 -->
+      <div class="thumb">
+        <img th:if="${rv.accommodation != null and rv.accommodation.thumbnailUrl != null}"
+             th:src="@{${rv.accommodation.thumbnailUrl}}" alt="숙소 썸네일"/>
+        <span th:if="${rv.accommodation == null or rv.accommodation.thumbnailUrl == null}"
+              style="color:#a7978c; font-weight:700;">thumb</span>
+      </div>
+
+      <!-- 제목 / 별점 -->
+      <div>
+        <div class="title-line">
+          <a th:if="${rv.accommodation != null}"
+             th:href="@{'/accommodations/' + ${rv.accommodation.id} + '#reviews'}"
+             class="name"
+             th:text="${rv.accommodation.name}">숙소명</a>
+          <span th:if="${rv.accommodation == null}" class="name">숙소</span>
+
+          <div class="stars" aria-label="별점">
+            <span class="star"
+                  th:each="i : ${#numbers.sequence(1,5)}"
+                  th:classappend="${i <= r} ? '' : ' star--empty'">★</span>
+          </div>
+        </div>
+        <div class="date"
+             th:text="${#temporals.format(rv.createdAt, 'yyyy-MM-dd HH:mm')}">
+          2025-10-01 12:12
+        </div>
+      </div>
+
+      <!-- 삭제 -->
+      <form th:action="@{/reviews/{rid}/delete(rid=${rv.id})}" method="post"
+            onsubmit="return confirm('해당 후기를 삭제할까요?')">
+        <input type="hidden" name="accommodationId"
+               th:value="${rv.accommodation != null ? rv.accommodation.id : null}" />
+        <button type="submit" class="btn-del">삭제</button>
+      </form>
+
+      <!-- 내용 -->
+      <div class="content-box" th:text="${rv.content}">후기 내용</div>
+
+      <!-- ✅ 숙소 상세 후기 위치로 이동 -->
+      <div style="grid-column:1 / -1; margin-top:6px; text-align:right;"
+           th:if="${rv.accommodation != null}">
+        <a th:href="@{'/accommodations/' + ${rv.accommodation.id} + '#reviews'}"
+           style="font-size:13px; padding:6px 10px; border-radius:999px;
+                  background:#CBA38F; color:white; text-decoration:none;">
+          숙소 후기로 이동
+        </a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

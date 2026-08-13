@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>예약 불가일 관리</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #fffdf9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        h1 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #5c3d2e;
+        }
+        .desc {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 24px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        input[type="date"] {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            background: #a67c52;
+            color: #fff;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        th {
+            background: #f9f3ea;
+            color: #5c3d2e;
+        }
+        .empty {
+            text-align: center;
+            color: #aaa;
+            padding: 20px 0;
+        }
+        .delete-btn {
+            background: #e57373;
+        }
+        .back-link {
+            display:block;
+            margin-top:16px;
+            text-align:right;
+            font-size:13px;
+            color:#5c3d2e;
+            text-decoration:none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>예약 불가일 관리</h1>
+    <p class="desc">
+        이 페이지에서 해당 숙소의 예약을 막고 싶은 날짜를 지정할 수 있습니다.<br>
+        게스트가 예약할 때, 지정한 날짜가 포함된 기간은 예약이 불가능합니다.
+    </p>
+
+    <!-- 날짜 추가 폼 -->
+    <form th:action="@{|/host/accommodations/${accommodationId}/blocked-dates|}" method="post">
+        <div class="form-row">
+            <label for="date">예약 불가로 지정할 날짜</label>
+            <input type="date" id="date" name="date" required>
+            <button type="submit">추가</button>
+        </div>
+    </form>
+
+    <!-- 목록 -->
+    <table>
+        <thead>
+        <tr>
+            <th>번호</th>
+            <th>예약 불가일</th>
+            <th>관리</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(blockedDates)}">
+            <td colspan="3" class="empty">등록된 예약 불가일이 없습니다.</td>
+        </tr>
+        <tr th:each="bd, stat : ${blockedDates}">
+            <td th:text="${stat.count}">1</td>
+            <td th:text="${bd.date}">2025-01-01</td>
+            <td>
+                <form th:action="@{|/host/accommodations/${accommodationId}/blocked-dates/${bd.id}/delete|}"
+                      method="post">
+                    <button type="submit" class="delete-btn">삭제</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a th:href="@{/host/mypage}" class="back-link">← 마이페이지로</a>
+</div>
+</body>
+</html>

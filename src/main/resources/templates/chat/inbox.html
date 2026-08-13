@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>메시지</title>
+  <style>
+    body { font-family: sans-serif; background:#fffdf9; padding: 32px; }
+    h2 { color:#5c3d2e; margin:0 0 16px 0; }
+    .list { background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,.06); padding: 8px 0; }
+    .item { position:relative; display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid #f2ebe5; }
+    .item:last-child { border-bottom:none; }
+    .room { font-weight:700; color:#5c3d2e; min-width: 260px; }
+    .prev { color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .time { margin-left:auto; color:#888; font-size:12px; }
+    .empty { color:#888; padding:16px 0; }
+
+    /* 링크는 텍스트만 감싸서 클릭 영역 지정 */
+    .item-link { display:flex; align-items:center; gap:10px; flex:1 1 auto; color:inherit; text-decoration:none; min-width:0; }
+
+    /* 숨김 버튼 */
+    .hide-btn {
+      flex:0 0 auto;
+      border:0;
+      width:28px; height:28px;
+      border-radius:8px;
+      background:#f2e7da;
+      color:#5c3d2e;
+      font-size:14px;
+      cursor:pointer;
+      opacity:.0;
+      transition:opacity .15s ease;
+    }
+    .item:hover .hide-btn { opacity:1; }
+    .hide-btn:focus { outline:2px solid #d7c6b6; }
+  </style>
+</head>
+<body>
+
+<h2>메시지</h2>
+
+<div th:if="${#lists.isEmpty(conversations)}" class="empty">대화가 없습니다.</div>
+
+<div th:unless="${#lists.isEmpty(conversations)}" class="list">
+  <div th:each="c : ${conversations}"
+       class="item conversation-item"
+       th:attr="data-room-id=${c.roomId}">
+    <!-- 링크: 대화방으로 이동 -->
+    <a class="item-link" th:href="@{'/chat'(roomId=${c.roomId})}">
+      <div class="room">
+        <span th:text="${c.accommodationName}">숙소명</span>
+        <span style="color:#8a7b70; margin-left:8px;"
+              th:text="'/ 호스트: ' + ${c.hostName}">/ 호스트: 홍길동</span>
+      </div>
+
+      <div class="prev">
+        <span th:if="${c.lastSenderName != null}">
+          <strong th:text="${c.lastSenderName}">보낸이</strong>
+          <span th:text="${' : ' + c.lastContent}"> : 마지막 메시지</span>
+        </span>
+        <span th:if="${c.lastSenderName == null}" style="color:#999">메시지 없음</span>
+      </div>
+
+      <div class="time"
+           th:text="${c.lastTime != null ? #temporals.format(c.lastTime, 'yyyy-MM-dd HH:mm') : ''}">
+        2025-01-01 12:00
+      </div>
+    </a>
+
+    <!-- 내 목록에서 삭제(숨김) -->
+    <button class="hide-btn" type="button" title="내 목록에서 삭제">×</button>
+  </div>
+</div>
+
+<script>
+  // 인박스 숨김 버튼 클릭 처리
+  document.addEventListener('click', async (e) => {
+    const hideBtn = e.target.closest('.hide-btn');
+    if (!hideBtn) return;
+
+    // 링크 클릭 막기
+    e.preventDefault();
+    e.stopPropagation();
+
+    const item = hideBtn.closest('.conversation-item');
+    const roomId = item?.dataset?.roomId;
+    if (!roomId) return;
+
+    if (!confirm('이 대화를 삭제하시겠습니까?')) return;
+
+    try {
+      const res = await fetch(`/chat/inbox/hide/${encodeURIComponent(roomId)}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!res.ok) throw new Error('hide failed: ' + res.status);
+      item.remove();
+    } catch (err) {
+      console.error(err);
+      alert('숨김 처리 중 문제가 발생했습니다.');
+    }
+  });
+</script>
+
+</body>
+</html>

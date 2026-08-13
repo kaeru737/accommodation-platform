@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>숙소 수정</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fffdf9;
+            padding: 40px;
+        }
+
+        /* ✅ 상단 헤더 영역: 제목 + 우측 버튼 */
+        .page-header {
+            max-width: 900px;
+            margin: 0 auto 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-header h2 {
+            margin: 0;
+            color: #5c3d2e;
+        }
+        .header-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid #a9744f;
+            background-color: #fffdf9;
+            color: #a9744f;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .header-btn:hover {
+            background-color: #f9f0e4;
+        }
+
+        form {
+            max-width: 900px;
+            margin: auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 700;
+            color: #333;
+            margin: 6px 0;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #d8cfc7;
+            background:#fffcf8;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .image-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .image-preview div {
+            position: relative;
+            display: inline-block;
+        }
+        .image-preview img {
+            width: 140px;
+            height: 94px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid transparent;
+        }
+        .image-preview input[type="radio"] {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            transform: scale(1.2);
+        }
+        button {
+            background-color: #a9744f;
+            color: white;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #8a5d3d;
+        }
+        .back-link {
+            display: block;
+            margin-top: 12px;
+            text-align: center;
+            color: #5c3d2e;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .row {
+            display:flex;
+            gap:8px;
+        }
+        .row > * {
+            flex:1;
+        }
+        .row .narrow {
+            flex: 0 0 240px;
+        }
+        #map {
+            width: 100%;
+            height: 350px;
+            border-radius: 12px;
+            border:1px solid #eee;
+        }
+        small.helper {
+            color:#7a5a4b;
+            display:block;
+            margin-top:6px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ✅ 제목 + 예약 불가일 관리 버튼 -->
+<div class="page-header">
+    <h2>숙소 정보 수정</h2>
+    <a th:href="@{|/host/accommodations/${accommodation.id}/blocked-dates|}"
+       class="header-btn">
+        예약 불가일 지정
+    </a>
+</div>
+
+<form th:action="@{/accommodations/{id}/edit(id=${accommodation.id})}" method="post" enctype="multipart/form-data">
+
+    <label>이름 *</label>
+    <input type="text" name="name" th:value="${accommodation.name}" required/>
+
+    <!-- 주소 & 지도 -->
+    <div>
+        <label>주소 *</label>
+        <input id="addressInput" type="text" name="location"
+               th:value="${accommodation.location}" required readonly/>
+
+        <div class="row" style="margin-top:8px;">
+            <input id="keywordInput" type="text" placeholder="장소/주소 검색 (예: 강남역, 서울시청)"/>
+            <button type="button" id="btnSearch" class="narrow">검색</button>
+        </div>
+
+        <div id="map" style="margin-top:10px;"></div>
+        <small class="helper">
+            지도를 클릭하거나 마커를 드래그하면 주소가 자동 입력되고,
+            좌표가 숨김 필드에 저장됩니다.
+        </small>
+
+        <input type="hidden" id="latInput" name="latitude" th:value="${accommodation.latitude}"/>
+        <input type="hidden" id="lngInput" name="longitude" th:value="${accommodation.longitude}"/>
+    </div>
+
+    <label>설명 *</label>
+    <textarea name="description" required th:text="${accommodation.description}"></textarea>
+
+    <label>가격 *</label>
+    <input type="number" name="price" th:value="${accommodation.price}" min="0" required/>
+
+    <label>대표 이미지 선택</label>
+    <div class="image-preview">
+        <div th:each="img : ${accommodation.images}">
+            <input type="radio" name="mainImageId" th:value="${img.id}" th:checked="${img.main}"/>
+            <img th:src="${img.imageUrl}" alt="이미지 미리보기">
+        </div>
+    </div>
+
+    <label>새 이미지 추가</label>
+    <input type="file" name="newImages" multiple accept="image/*"/>
+
+    <button type="submit">수정 완료</button>
+</form>
+
+<a th:href="@{/host/mypage}" class="back-link">← 마이페이지로</a>
+
+<!-- Kakao Maps JS SDK: autoload=false -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=eac33428a454120406f8ea347d010ea1&libraries=services&autoload=false"></script>
+<script th:inline="javascript">
+  kakao.maps.load(function () {
+    const initLat  = /*[[${accommodation.latitude}]]*/ null;
+    const initLng  = /*[[${accommodation.longitude}]]*/ null;
+    const initAddr = /*[[${accommodation.location}]]*/ '';
+
+    const addressInput = document.getElementById('addressInput');
+    const latInput = document.getElementById('latInput');
+    const lngInput = document.getElementById('lngInput');
+
+    const geocoder = new kakao.maps.services.Geocoder();
+    const places   = new kakao.maps.services.Places();
+    const DEFAULT  = { lat: 37.5665, lng: 126.9780 };
+
+    function buildMap(center) {
+      const map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(center.lat, center.lng),
+        level: 3
+      });
+      const marker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(center.lat, center.lng),
+        draggable: true
+      });
+      marker.setMap(map);
+
+      function setLatLng(lat, lng){ latInput.value = lat; lngInput.value = lng; }
+      function setAddressByCoord(lat, lng){
+        geocoder.coord2Address(lng, lat, (result, status) => {
+          if (status === kakao.maps.services.Status.OK && result && result[0]) {
+            const road  = result[0].road_address?.address_name;
+            const jibun = result[0].address?.address_name;
+            addressInput.value = road || jibun || '';
+          }
+        });
+      }
+
+      kakao.maps.event.addListener(map, 'click', (e) => {
+        const pos = e.latLng;
+        marker.setPosition(pos);
+        setLatLng(pos.getLat(), pos.getLng());
+        setAddressByCoord(pos.getLat(), pos.getLng());
+      });
+
+      kakao.maps.event.addListener(marker, 'dragend', () => {
+        const pos = marker.getPosition();
+        setLatLng(pos.getLat(), pos.getLng());
+        setAddressByCoord(pos.getLat(), pos.getLng());
+      });
+
+      document.getElementById('btnSearch').addEventListener('click', () => {
+        const q = (document.getElementById('keywordInput').value || '').trim();
+        if (!q) return;
+        places.keywordSearch(q, (results, status) => {
+          if (status !== kakao.maps.services.Status.OK || !results?.length) return;
+          const first = results[0];
+          const lat = parseFloat(first.y), lng = parseFloat(first.x);
+          const pos = new kakao.maps.LatLng(lat, lng);
+          map.setCenter(pos);
+          marker.setPosition(pos);
+          setLatLng(lat, lng);
+          setAddressByCoord(lat, lng);
+        }, { size: 5 });
+      });
+
+      setLatLng(center.lat, center.lng);
+      if (!addressInput.value) setAddressByCoord(center.lat, center.lng);
+    }
+
+    if (initLat != null && initLng != null) {
+      buildMap({ lat: parseFloat(initLat), lng: parseFloat(initLng) });
+    } else if (initAddr) {
+      geocoder.addressSearch(initAddr, (result, status) => {
+        if (status === kakao.maps.services.Status.OK && result?.length) {
+          buildMap({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
+        } else {
+          buildMap(DEFAULT);
+        }
+      });
+    } else {
+      buildMap(DEFAULT);
+    }
+  });
+</script>
+
+</body>
+</html>

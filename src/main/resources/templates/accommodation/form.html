@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>숙소 등록</title>
+  <style>
+    :root{
+      --bg:#fff8f0;
+      --card:#ffffff;
+      --ink:#3c2f26;
+      --ink-sub:#7a5a4b;
+      --line:#e8ded6;
+      --brand:#a9744f;
+      --brand-d:#8a5d3d;
+      --field-bg:#fffcf8;
+      --radius:14px;
+    }
+    html,body{margin:0;padding:0}
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      padding:28px 16px 48px;
+    }
+    h2{ margin:0 0 18px; text-align:center; color:#5c3d2e; letter-spacing:.02em; }
+
+    form{
+      max-width: 980px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .section{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:0 4px 10px rgba(0,0,0,.05);
+      padding:22px;
+      overflow:hidden;
+    }
+    .section h3{ margin:0 0 14px; color:#5c3d2e; }
+
+    label{display:block;font-weight:700;margin:10px 0 6px}
+    input,select,textarea,button{ font:inherit; }
+    input[type="text"], input[type="number"], select, textarea{
+      width:100%; max-width:100%; box-sizing:border-box;
+      background:var(--field-bg);
+      border:1px solid var(--line);
+      color:var(--ink);
+      padding:10px 12px;
+      border-radius:10px;
+    }
+    textarea[name="description"]{ min-height: 170px; resize: vertical; }
+
+    .grid-3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items:end; }
+
+    .counter{ display:flex; align-items:center; gap:10px; }
+    .counter button{
+      width:36px; height:36px; border-radius:50%;
+      border:1px solid #d0d0d0; background:#f5f5f5; cursor:pointer;
+      font-size:18px;
+    }
+    .counter input{ width:72px; min-width:72px; text-align:center; height:38px; }
+
+    .row{ display:flex; gap:10px; align-items:center; }
+    .row > *{ flex:1 1 auto; }
+    .narrow{ flex: 0 0 260px; }
+
+    .btn{ height: 44px; border-radius:10px; border:none; background:var(--brand); color:#fff; font-weight:700; cursor:pointer; }
+    .btn:hover{ background:var(--brand-d); }
+
+    #map{ width:100%; height:360px; border-radius:12px; border:1px solid #eee; margin-top:10px; }
+    small.helper{ color:var(--ink-sub); display:block; margin-top:6px; }
+
+    .submit{ padding:14px; background:var(--brand); color:#fff; border:none; border-radius:12px; cursor:pointer; font-weight:800; font-size:16px; }
+    .submit:hover{ background:var(--brand-d); }
+
+    /* 미리보기 이미지 + 라디오 위치 */
+    .preview-container{ display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; }
+    .preview-item{ position:relative; }
+    .preview-item img{
+      width:200px; height:140px; object-fit:cover;
+      border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.15);
+    }
+    .preview-item input[type="radio"]{
+      position:absolute;
+      top:8px; right:8px;    /* 오른쪽 상단 */
+      width:20px; height:20px;
+      transform:none;
+      z-index:2;
+      background:#fff;
+      border-radius:50%;
+    }
+
+    /* ✅ 예약 불가일 안내 문구 */
+    .blocked-info {
+      max-width: 980px;
+      margin: 6px auto 0;
+      font-size: 13px;
+      color: var(--ink-sub);
+      text-align: right;
+    }
+
+    @media (max-width:780px){
+      .grid-3{ grid-template-columns: 1fr; }
+      .narrow{ flex:1 1 auto; }
+      .counter input{ width:64px; min-width:64px; }
+      .preview-item img{ width:150px; height:110px; }
+    }
+  </style>
+</head>
+<body>
+  <h2>숙소 등록</h2>
+
+  <form id="accommodationForm" th:action="@{/accommodations/new}" method="post" enctype="multipart/form-data">
+    <!-- 기본 정보 -->
+    <div class="section">
+      <h3>기본 정보</h3>
+      <label>숙소 이름 *</label>
+      <input type="text" name="name" required />
+      <label>설명 *</label>
+      <textarea name="description" required></textarea>
+
+      <div class="grid-3">
+        <div>
+          <label>가격(₩) *</label>
+          <input type="number" name="price" min="0" required />
+        </div>
+        <div>
+          <label>체크인 시간 *</label>
+          <select name="checkIn" required>
+            <option value="">-- 선택 --</option>
+            <option value="13:00">13:00</option>
+            <option value="14:00">14:00</option>
+            <option value="15:00">15:00</option>
+          </select>
+        </div>
+        <div>
+          <label>체크아웃 시간 *</label>
+          <select name="checkOut" required>
+            <option value="">-- 선택 --</option>
+            <option value="11:00">11:00</option>
+            <option value="12:00">12:00</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 상세 정보 -->
+    <div class="section">
+      <h3>상세 정보</h3>
+      <label>최대 인원 *</label>
+      <div class="counter">
+        <button type="button" onclick="decrement('maxGuests')">-</button>
+        <input type="number" id="maxGuests" name="maxGuests" value="1" min="1" required />
+        <button type="button" onclick="increment('maxGuests')">+</button>
+      </div>
+      <label>침실 수 *</label>
+      <div class="counter">
+        <button type="button" onclick="decrement('bedrooms')">-</button>
+        <input type="number" id="bedrooms" name="bedrooms" value="1" min="0" required />
+        <button type="button" onclick="increment('bedrooms')">+</button>
+      </div>
+      <label>침대 수 *</label>
+      <div class="counter">
+        <button type="button" onclick="decrement('beds')">-</button>
+        <input type="number" id="beds" name="beds" value="1" min="0" required />
+        <button type="button" onclick="increment('beds')">+</button>
+      </div>
+      <label>욕실 수 *</label>
+      <div class="counter">
+        <button type="button" onclick="decrement('bathrooms')">-</button>
+        <input type="number" id="bathrooms" name="bathrooms" value="1" min="0" required />
+        <button type="button" onclick="increment('bathrooms')">+</button>
+      </div>
+    </div>
+
+    <!-- 주소/지도 -->
+    <div class="section">
+      <h3>주소</h3>
+      <div class="row">
+        <input id="addressInput" name="location" type="text" placeholder="지도를 클릭하거나 검색으로 선택하세요" readonly required />
+        <input id="detailInput" name="addressDetail" type="text" class="narrow" placeholder="상세주소(선택)" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="keywordInput" type="text" placeholder="장소/주소 검색 (예: 강남역, 서울시청)" />
+        <button type="button" id="btnSearch" class="btn narrow">검색</button>
+      </div>
+      <div id="map"></div>
+      <small class="helper">지도를 클릭하거나 마커를 드래그하면 주소가 자동 입력됩니다.</small>
+      <input type="hidden" id="latInput" name="latitude" />
+      <input type="hidden" id="lngInput" name="longitude" />
+    </div>
+
+    <!-- 이미지 -->
+    <div class="section">
+      <h3>이미지</h3>
+      <label>이미지 업로드 *</label>
+      <input type="file" name="images" id="imageUpload" multiple required onchange="previewImages(event)" />
+      <label>대표 이미지 선택:</label>
+      <div class="preview-container" id="preview-container"></div>
+      <input type="hidden" name="mainImageIndex" id="mainImageIndex" value="0" required />
+    </div>
+
+    <!-- ✅ 예약 불가일 안내 -->
+    <p class="blocked-info">
+      예약 불가일은 숙소 등록 후 <strong>‘숙소 수정’ 화면</strong>에서 설정할 수 있습니다.
+    </p>
+
+    <button type="submit" class="submit">등록</button>
+  </form>
+
+  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=eac33428a454120406f8ea347d010ea1&libraries=services"></script>
+  <script>
+    function increment(id){ const el=document.getElementById(id); el.value=(parseInt(el.value||'0')+1); }
+    function decrement(id){ const el=document.getElementById(id); const min=parseInt(el.min||'0'); const v=parseInt(el.value||'0'); if(v>min) el.value=v-1; }
+
+    function previewImages(e){
+      const files=e.target.files, box=document.getElementById('preview-container');
+      box.innerHTML='';
+      [...files].forEach((f,i)=>{
+        const r=new FileReader();
+        r.onload=ev=>{
+          const wrap=document.createElement('div');
+          wrap.className='preview-item'; // 오른쪽 상단 라디오 적용
+          const img=document.createElement('img'); img.src=ev.target.result;
+          const radio=document.createElement('input'); radio.type='radio'; radio.name='mainImageRadio'; radio.value=i;
+          radio.onclick=()=>document.getElementById('mainImageIndex').value=i;
+          if(i===0) radio.checked=true;
+          wrap.appendChild(radio); wrap.appendChild(img); box.appendChild(wrap);
+        };
+        r.readAsDataURL(f);
+      });
+      document.getElementById('mainImageIndex').value=0;
+    }
+
+    const geocoder=new kakao.maps.services.Geocoder();
+    const places=new kakao.maps.services.Places();
+    const init = { lat:37.5665, lng:126.9780 };
+    const map = new kakao.maps.Map(document.getElementById('map'), { center:new kakao.maps.LatLng(init.lat,init.lng), level:3 });
+    const marker=new kakao.maps.Marker({ position:new kakao.maps.LatLng(init.lat,init.lng), draggable:true });
+    marker.setMap(map);
+
+    const addressInput=document.getElementById('addressInput');
+    const latInput=document.getElementById('latInput');
+    const lngInput=document.getElementById('lngInput');
+
+    function setLatLng(lat,lng){ latInput.value=lat; lngInput.value=lng; }
+    function setAddressByCoord(lat,lng){
+      geocoder.coord2Address(lng,lat,(res,stat)=>{
+        if(stat===kakao.maps.services.Status.OK && res && res[0]){
+          const road=res[0].road_address?res[0].road_address.address_name:null;
+          const jibun=res[0].address?res[0].address.address_name:null;
+          addressInput.value=road||jibun||'';
+        }
+      });
+    }
+    kakao.maps.event.addListener(map,'click',e=>{
+      const pos=e.latLng; marker.setPosition(pos);
+      setLatLng(pos.getLat(),pos.getLng()); setAddressByCoord(pos.getLat(),pos.getLng());
+    });
+    kakao.maps.event.addListener(marker,'dragend',()=>{
+      const pos=marker.getPosition();
+      setLatLng(pos.getLat(),pos.getLng()); setAddressByCoord(pos.getLat(),pos.getLng());
+    });
+    document.getElementById('btnSearch').addEventListener('click',()=>{
+      const q=(document.getElementById('keywordInput').value||'').trim(); if(!q) return;
+      places.keywordSearch(q,(results,status)=>{
+        if(status!==kakao.maps.services.Status.OK || !results?.length) return;
+        const first=results[0]; const lat=parseFloat(first.y), lng=parseFloat(first.x);
+        const pos=new kakao.maps.LatLng(lat,lng);
+        map.setCenter(pos); marker.setPosition(pos);
+        setLatLng(lat,lng); setAddressByCoord(lat,lng);
+      },{size:5});
+    });
+
+    setLatLng(init.lat,init.lng);
+    setAddressByCoord(init.lat,init.lng);
+
+    document.getElementById('accommodationForm').addEventListener('submit',e=>{
+      if(!addressInput.value || !latInput.value || !lngInput.value){
+        alert('지도를 사용해 숙소 위치를 선택해주세요.'); e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>내 숙소 후기</title>
+  <style>
+    :root{
+      --bg:#FFFCF7; --card:#FFFFFF; --ink:#3A2F28; --muted:#9B8579;
+      --star:#FFA71B; --soft:#EEDFD6; --shadow:0 8px 22px rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:32px 20px; background:var(--bg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Malgun Gothic,sans-serif;
+      color:var(--ink);
+    }
+    h1{margin:0 0 6px 0; font-size:30px; letter-spacing:-.3px}
+    .subtitle{color:var(--muted); margin-bottom:16px; font-size:14px}
+
+    .top-actions{position:sticky; top:12px; float:right}
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+      background:#CBA38F; color:#fff; text-decoration:none;
+      border:none; border-radius:999px; font-weight:600; box-shadow:var(--shadow)
+    }
+
+    .list{
+      display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:14px; margin-top:8px;
+    }
+    @media (max-width:860px){ .list{grid-template-columns:1fr} }
+
+    .card{
+      background:var(--card); border-radius:18px; box-shadow:var(--shadow);
+      padding:14px; display:grid; grid-template-columns:64px 1fr;
+      gap:12px; align-items:start;
+    }
+    .thumb{
+      width:64px; height:64px; border-radius:12px; overflow:hidden;
+      background:#EAE4DE; display:grid; place-items:center;
+    }
+    .thumb img{width:100%; height:100%; object-fit:cover; display:block}
+
+    .title-line{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+    .name{font-size:18px; font-weight:800; color:#3D2E8A; text-decoration:none}
+    .name:hover{text-decoration:underline}
+
+    .stars{display:inline-flex; gap:4px; transform:translateY(-1px)}
+    .star{font-size:16px; line-height:1; color:var(--star)}
+    .star--empty{color:#E9DCD2}
+
+    .meta{color:var(--muted); font-size:13px}
+    .content{
+      grid-column:1 / -1; border:1px solid var(--soft); border-radius:12px;
+      padding:10px 12px; background:#fff; font-size:14px; line-height:1.55;
+    }
+    .empty{
+      padding:18px; background:var(--card); border:1px dashed var(--soft);
+      border-radius:12px; color:var(--muted); text-align:center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-actions">
+    <a th:href="@{/host/mypage}" class="btn">숙소 관리로</a>
+  </div>
+
+  <h1>내 숙소 후기</h1>
+  <!-- 🔧 닉네임 없을 때 이름으로 fallback -->
+  <div class="subtitle"
+       th:text="${(user.nickname != null ? user.nickname : user.name)} + ' 호스트님의 숙소에 달린 후기 목록입니다.'">
+    설명
+  </div>
+
+  <!-- 비어있을 때 -->
+  <div th:if="${#lists.isEmpty(reviews)}" class="empty">
+    아직 등록된 후기가 없습니다.
+  </div>
+
+  <!-- 후기 리스트 -->
+  <div class="list" th:if="${!#lists.isEmpty(reviews)}">
+    <div class="card" th:each="rv : ${reviews}"
+         th:with="raw=${rv.rating},
+                  r=${raw == null ? 0 : (raw < 0 ? 0 : (raw > 5 ? 5 : raw))}">
+      <!-- 썸네일 -->
+      <div class="thumb">
+        <!-- 🔧 mainImageUrl 대신 썸네일 메서드 사용 (엔티티에 getThumbnailUrl() 있음) -->
+        <img th:if="${rv.accommodation != null and rv.accommodation.thumbnailUrl != null}"
+             th:src="@{${rv.accommodation.thumbnailUrl}}" alt="숙소 썸네일"/>
+        <span th:if="${rv.accommodation == null or rv.accommodation.thumbnailUrl == null}"
+              style="color:#a7978c; font-weight:700;">thumb</span>
+      </div>
+
+      <!-- 상단 정보 -->
+      <div>
+        <div class="title-line">
+          <a th:if="${rv.accommodation != null}"
+             th:href="@{'/accommodations/' + ${rv.accommodation.id} + '#reviews'}"
+             class="name"
+             th:text="${rv.accommodation.name}">숙소명</a>
+          <span th:if="${rv.accommodation == null}" class="name">숙소명 없음</span>
+
+          <div class="stars" aria-label="별점">
+            <span class="star"
+                  th:each="i : ${#numbers.sequence(1,5)}"
+                  th:classappend="${i <= r} ? '' : ' star--empty'">★</span>
+          </div>
+        </div>
+        <div class="meta">
+          <span th:text="'게스트: ' + (${rv.author != null ? rv.author.nickname : '익명'})"></span>
+          ·
+          <span th:text="${#temporals.format(rv.createdAt, 'yyyy-MM-dd HH:mm')}">2025-11-01</span>
+        </div>
+      </div>
+
+      <!-- 후기 내용 -->
+      <div class="content" th:text="${rv.content}">후기 내용</div>
+
+      <!-- ✅ 숙소 상세 후기 위치로 이동 -->
+      <div style="grid-column:1 / -1; margin-top:8px; text-align:right;"
+           th:if="${rv.accommodation != null}">
+        <a th:href="@{'/accommodations/' + ${rv.accommodation.id} + '#reviews'}"
+           style="font-size:13px; padding:6px 10px; border-radius:999px;
+                  background:#CBA38F; color:white; text-decoration:none;">
+          숙소 후기로 이동
+        </a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

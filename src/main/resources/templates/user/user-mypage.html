@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #fffdf9;
+            padding: 40px;
+        }
+
+        .user-menu-container {
+            position: relative;
+            display: inline-block;
+            float: right;
+            margin-bottom: 20px;
+        }
+
+        .profile-button {
+            background-color: #a67c52;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 50px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 200px;
+            padding: 12px 0;
+            z-index: 1000;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f5f5f5;
+        }
+
+        h2 {
+            color: #5c3d2e;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: #5c3d2e;
+            margin-top: 30px;
+            margin-bottom: 16px;
+        }
+
+        .card-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease;
+            padding: 16px;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .card-detail {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .card-price {
+            font-weight: 600;
+            color: #5c3d2e;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 10px 16px;
+            background-color: #5c3d2e;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: 30px;
+            transition: background-color 0.3s ease;
+            font-size: 14px;
+        }
+
+        .back-button:hover {
+            background-color: #3e2a1d;
+        }
+    </style>
+</head>
+<body>
+
+<div class="user-menu-container">
+    <button onclick="toggleUserMenu()" class="profile-button" th:text="${#strings.substring(user.nickname, 0, 1)}">로</button>
+    <div id="userDropdown" class="dropdown-menu" style="display: none;">
+        <a href="/users/mypage">예약 내역</a>
+        <a href="/my/reviews">후기</a> <!-- ✅ 내 후기 페이지 링크 -->
+        <a href="/users/wishlist">위시리스트</a>
+        <a href="/messages">메시지</a>
+        <a href="/logout">로그아웃</a>
+    </div>
+</div>
+
+<h2 th:text="${user.nickname + '님의 마이페이지'}">마이페이지</h2>
+
+<div>
+    <h3>예약 내역</h3>
+
+    <div th:if="${#lists.isEmpty(reservations)}">
+        <p>예약 내역이 없습니다.</p>
+    </div>
+
+    <div class="card-list">
+        <a class="card-link" th:each="res : ${reservations}" th:href="@{/reservations/{id}(id=${res.id})}">
+            <div class="card">
+                <div class="card-title" th:text="${res.accommodation.name}">숙소 이름</div>
+                <div class="card-detail" th:text="'체크인: ' + ${res.checkInDate} + ' / 체크아웃: ' + ${res.checkOutDate}"></div>
+                <div class="card-detail" th:text="'인원 수: ' + ${res.guestCount} + '명'"></div>
+                <div class="card-price" th:text="'총 가격: ₩' + ${#numbers.formatDecimal(res.totalPrice, 0, 'COMMA', 0, 'POINT')}">₩0</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<a href="/" class="back-button">메인으로</a>
+
+<script>
+    function toggleUserMenu() {
+        const dropdown = document.getElementById("userDropdown");
+        dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+    }
+
+    window.addEventListener("click", function(e) {
+        const button = document.querySelector(".profile-button");
+        const menu = document.getElementById("userDropdown");
+        if (!button.contains(e.target) && !menu.contains(e.target)) {
+            menu.style.display = "none";
+        }
+    });
+</script>
+
+</body>
+</html>

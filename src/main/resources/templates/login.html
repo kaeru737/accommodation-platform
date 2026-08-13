@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>로그인</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background-color: #fffdf9;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-card {
+            background-color: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+        h2 {
+            color: #5c3d2e;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background-color: #a9744f;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #8a5d3d;
+        }
+        .link {
+            margin-top: 14px;
+            font-weight: bold;
+            color: #5c3d2e;
+        }
+        .link a {
+            text-decoration: none;
+            color: #5c3d2e;
+        }
+        .msg {
+            margin-top: 10px;
+            color: red;
+            font-weight: bold;
+        }
+        .bottom-btn {
+            margin-top: 24px;
+            display: flex;
+            gap: 16px;
+        }
+        .bottom-btn a {
+            padding: 10px 20px;
+            background-color: #5c3d2e;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .bottom-btn a:hover {
+            background-color: #3d291f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>로그인</h2>
+
+    <div class="msg">
+        <p th:if="${error}" th:text="${error}" style="color: red;"></p>
+        <p th:if="${successMessage}" th:text="${successMessage}" style="color: green;"></p>
+    </div>
+
+    <form th:action="@{/login}" method="post">
+        <input type="email" name="email" placeholder="이메일" required />
+        <input type="password" name="password" placeholder="비밀번호" required />
+        <button type="submit">로그인</button>
+    </form>
+
+    <div class="link">
+        <a th:href="@{/register}">회원가입</a>
+    </div>
+</div>
+
+<div class="bottom-btn">
+    <a th:href="@{/}">메인으로 돌아가기</a>
+</div>
+
+</body>
+</html>

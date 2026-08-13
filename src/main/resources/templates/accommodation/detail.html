@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${accommodation.name} + ' 상세 정보'">숙소 상세</title>
+
+    <!-- 날짜 선택용 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.css">
+
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #fffdf9;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .image-section { display: flex; flex-direction: column; }
+
+        .main-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .thumbnail-list { display: flex; gap: 10px; }
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            cursor: pointer;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: transform .2s, border .2s;
+        }
+        .thumbnail:hover { transform: scale(1.05); border: 2px solid #5c3d2e; }
+        .thumbnail.active { border: 2px solid #5c3d2e; }
+
+        .panel {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 24px;
+        }
+
+        .panel h2 { margin: 0 0 20px 0; }
+        .panel p { margin: 10px 0; }
+
+        .booking-form label { display: block; margin-top: 10px; }
+        .booking-form input,
+        .booking-form select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            transition: box-shadow .2s, border-color .2s;
+        }
+        .booking-form input:focus,
+        .booking-form select:focus {
+            border-color: #5c3d2e;
+            box-shadow: 0 0 3px rgba(92,61,46,.5);
+            outline: none;
+        }
+
+        .booking-form button {
+            margin-top: 20px;
+            width: 100%;
+            background-color: #5c3d2e;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .total-price {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #5c3d2e;
+        }
+
+        .host-meta {
+            color: #7a5a4b;
+            font-size: 14px;
+            margin-top: -6px;
+        }
+
+        .description {
+            max-width: 1200px;
+            margin: 40px auto 0;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .description h3 { margin-top: 0; }
+
+        .btn-row { display:flex; gap:8px; margin-top:12px; }
+        .btn {
+            display:inline-block;
+            padding:10px 14px;
+            border-radius: 24px;
+            background:#c1a78a;
+            color:#fff;
+            text-decoration:none;
+            font-size:14px;
+        }
+        .btn-danger { background:#cda18a; }
+
+        .muted { color:#7a5a4b; font-size:14px; }
+
+        /* ✅ 호스트용 예약 통계 스타일 */
+        .host-stats {
+            margin-top: 22px;
+        }
+        .stats-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: #5c3d2e;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .stat-box {
+            background: #fff7ec;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #8a6c58;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4d3527;
+        }
+        .stats-divider {
+            height: 1px;
+            background: #f0e2d7;
+            margin: 16px 0 10px 0;
+        }
+
+        /* ✅ 지난 예약 기록(월별) */
+        .month-stats {
+            margin-top: 18px;
+        }
+        .month-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #5c3d2e;
+        }
+        .month-select-row {
+            display:flex;
+            gap:8px;
+            margin-bottom:8px;
+        }
+        .month-select {
+            flex:1;
+            padding:6px 8px;
+            border-radius:8px;
+            border:1px solid #dac5b6;
+            font-size:13px;
+        }
+        .month-btn {
+            padding:6px 10px;
+            border-radius:8px;
+            border:none;
+            background:#5c3d2e;
+            color:#fff;
+            font-size:13px;
+            cursor:pointer;
+            white-space:nowrap;
+        }
+        .month-count {
+            font-size:13px;
+            color:#5c3d2e;
+            margin-top:4px;
+        }
+
+        /* ▽▽ 선택된 월 달력 표시 ▽▽ */
+        .month-calendar {
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 1px solid #f0e2d7;
+            overflow: hidden;
+        }
+        .flatpickr-day.is-booked-day {
+            background: #f4b32133;
+            border-color: #f4b321;
+            color: #4d3527;
+        }
+
+        /* 지도 카드 */
+        .map-card {
+            background:#fff;
+            border-radius:12px;
+            box-shadow:0 0 10px rgba(0,0,0,.08);
+            padding:16px;
+            margin-top:16px;
+        }
+        #map { width:100%; height:320px; border-radius:12px; }
+
+        /* 후기 카드 */
+        .review-card {
+            background:#fff;
+            border-radius:12px;
+            box-shadow:0 0 10px rgba(0,0,0,.08);
+            padding:16px;
+            margin-top:16px;
+        }
+
+        .alert { padding:10px 12px; border-radius:8px; margin-bottom:10px; font-size:14px; }
+        .alert-error { background:#ffecec; color:#8a1f11; border:1px solid #ffd0cc; }
+
+        /* ========= 별점 선택 UI ========= */
+        .review-form { margin-bottom: 12px; }
+
+        .review-row {
+            display:flex;
+            align-items:center;
+            gap:14px;
+            margin-top:8px;
+        }
+
+        .review-row--content {
+            align-items:flex-start;
+        }
+
+        .review-label {
+            width:60px;
+            font-size:14px;
+            font-weight:700;
+            color:#5c3d2e;
+        }
+
+        .rating-stars {
+            display:inline-flex;
+            gap:6px;
+        }
+
+        .rating-star {
+            font-size:26px;
+            cursor:pointer;
+            color:#e0d1c7;
+            transition:transform .15s, color .15s;
+        }
+
+        .rating-star.is-active,
+        .rating-star.is-hover {
+            color:#f4b321;
+            transform:translateY(-1px);
+        }
+
+        .rating-star:focus-visible {
+            outline:2px solid #5c3d2e;
+            outline-offset:2px;
+        }
+
+        .rating-hint {
+            font-size:13px;
+            color:#7a5a4b;
+        }
+
+        .review-textarea {
+            flex:1;
+            min-height:90px;
+            padding:10px;
+            border-radius:8px;
+            border:1px solid #e9e1da;
+            font-family:inherit;
+            resize:vertical;
+        }
+
+        .review-submit {
+            padding:10px 14px;
+            border:none;
+            border-radius:8px;
+            background:#5c3d2e;
+            color:#fff;
+            cursor:pointer;
+            font-size:14px;
+            white-space:nowrap;
+        }
+
+        /* 제목 + 위시 버튼 행 */
+        .title-row {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            margin-bottom:8px;
+        }
+
+        .wish-form { margin:0; }
+
+        .wish-btn {
+            padding:6px 12px;
+            border-radius:999px;
+            border:1px solid #e4c9b1;
+            background:#fff7ec;
+            font-size:13px;
+            cursor:pointer;
+            color:#5c3d2e;
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+        }
+        .wish-btn.is-active {
+            background:#ffebe8;
+            border-color:#ff8a8a;
+            color:#d14b4b;
+        }
+
+        /* ★ SVG 하트 공통 모양 */
+        .heart-icon{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .heart-svg{
+            width:18px;
+            height:18px;
+            stroke:#cda18a;      /* 기본: 테두리만 있는 빈 하트 */
+            stroke-width:2;
+            fill:none;
+            transition:fill .15s, stroke .15s;
+        }
+        .wish-btn.is-active .heart-svg{
+            stroke:#e35a5a;      /* 찜 상태: 같은 모양 + 채움 */
+            fill:#e35a5a;
+        }
+
+        @media (max-width: 900px){
+            .container{
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ============ 왼쪽: 이미지/설명/지도/후기 ============ -->
+    <div class="image-section">
+        <img th:src="@{${accommodation.mainImageUrl}}" alt="Main Image" class="main-image" id="mainImage">
+
+        <div class="thumbnail-list">
+            <img th:each="img : ${accommodation.images}"
+                 th:src="@{${img.imageUrl}}"
+                 class="thumbnail"
+                 th:classappend="${img.main} ? 'active'"
+                 onclick="changeMainImage(this)">
+        </div>
+
+        <div class="description" style="margin:20px 0 0 0;">
+            <h3>숙소 설명</h3>
+            <p th:text="${accommodation.description}">여기에 숙소 설명이 들어갑니다.</p>
+
+            <h3>상세 정보</h3>
+            <ul>
+                <li th:text="'최대 인원: ' + ${accommodation.maxGuests} + '명'"></li>
+                <li th:text="'침실: ' + ${accommodation.bedrooms} + '개'"></li>
+                <li th:text="'침대: ' + ${accommodation.beds} + '개'"></li>
+                <li th:text="'욕실: ' + ${accommodation.bathrooms} + '개'"></li>
+                <li th:text="'체크인: ' + ${accommodation.checkIn}"></li>
+                <li th:text="'체크아웃: ' + ${accommodation.checkOut}"></li>
+            </ul>
+        </div>
+
+        <!-- ✅ 숙소 위치(지도) -->
+        <div class="map-card">
+            <h3 style="margin:0 0 10px 0;">숙소 위치</h3>
+            <div id="map"></div>
+            <div style="margin-top:8px;color:#7a5a4b;font-size:14px;">
+                <strong>주소:</strong> <span th:text="${accommodation.location}">주소</span>
+            </div>
+        </div>
+
+        <!-- ✅ 후기 섹션 -->
+        <div id="reviews" class="review-card">
+            <h3 style="margin:0 0 10px 0;">후기</h3>
+
+            <div th:if="${param.error != null and param.error[0] == 'notEligible'}"
+                 class="alert alert-error">
+                체크아웃 완료한 게스트만 후기를 작성할 수 있습니다.
+            </div>
+
+            <div class="muted" style="margin-bottom:12px;">
+                <b th:text="${#lists.isEmpty(reviews) ? '아직 후기가 없어요' : '평균 평점 ' + avgRating + ' / 5.0'}">평균 평점</b>
+            </div>
+
+            <!-- ✅ 게스트 후기 작성 폼 -->
+            <div th:if="${session.loginUser != null and canReview}">
+                <form th:action="@{'/accommodations/' + ${accommodation.id} + '/reviews'}"
+                      method="post"
+                      class="review-form">
+                    <div class="review-row">
+                        <div class="review-label">평점</div>
+
+                        <div>
+                            <input type="hidden" id="ratingInput" name="rating" value="0">
+                            <div class="rating-stars" id="ratingStars" role="radiogroup" aria-label="평점 선택">
+                                <span class="rating-star" tabindex="0" data-value="1" aria-label="1점">★</span>
+                                <span class="rating-star" tabindex="0" data-value="2" aria-label="2점">★</span>
+                                <span class="rating-star" tabindex="0" data-value="3" aria-label="3점">★</span>
+                                <span class="rating-star" tabindex="0" data-value="4" aria-label="4점">★</span>
+                                <span class="rating-star" tabindex="0" data-value="5" aria-label="5점">★</span>
+                            </div>
+                            <div class="rating-hint" id="ratingHint">별을 눌러 평점을 선택해주세요.</div>
+                        </div>
+
+                        <button type="submit" class="review-submit">등록</button>
+                    </div>
+
+                    <div class="review-row review-row--content">
+                        <label for="content" class="review-label">내용</label>
+                        <textarea id="content"
+                                  name="content"
+                                  class="review-textarea"
+                                  required></textarea>
+                    </div>
+                </form>
+
+                <hr style="border:none;border-top:1px solid #f0e8e2; margin:14px 0;">
+            </div>
+
+            <div th:if="${session.loginUser != null and !canReview}" class="muted" style="margin-bottom:12px;">
+                ※ 체크아웃을 완료한 게스트만 후기를 남길 수 있습니다.
+            </div>
+
+            <div th:if="${#lists.isEmpty(reviews)}" style="color:#7a5a4b;">등록된 후기가 없습니다.</div>
+
+            <!-- ✅ 후기 + 호스트 답변 -->
+            <div th:each="rv : ${reviews}"
+                 style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #f6f0ea;">
+                <div style="flex:1;">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <div style="font-weight:700;"
+                             th:text="${rv.author != null ? rv.author.nickname : '익명'}">닉네임</div>
+                        <div style="color:#aa8c7a; font-size:13px;"
+                             th:text="${#temporals.format(rv.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</div>
+                    </div>
+
+                    <!-- 별점 -->
+                    <div style="margin:4px 0;">
+                        <span th:each="i: ${#numbers.sequence(1,5)}"
+                              th:text="${i <= rv.rating ? '★' : '☆'}"
+                              th:style="${i <= rv.rating} ? 'color:#f39c12; letter-spacing:1px;' : 'color:#e0d1c7; letter-spacing:1px;'">
+                            ★
+                        </span>
+                        <span class="muted">(<span th:text="${rv.rating}">5</span>/5)</span>
+                    </div>
+
+                    <!-- 게스트 후기 내용 -->
+                    <div th:text="${rv.content}" style="white-space:pre-wrap; margin-bottom:8px;"></div>
+
+                    <!-- 🔸 호스트 답변이 이미 있을 때: 누구나 보이는 박스 -->
+                    <div th:if="${rv.hostReply != null}"
+                         style="margin-top:8px; padding:8px 10px; border-radius:8px; background:#fff8f1;">
+                        <div style="font-size:13px; font-weight:600; color:#5c3d2e; margin-bottom:4px;">
+                            호스트 답변
+                        </div>
+                        <div style="font-size:13px; color:#5c3d2e; white-space:pre-wrap;"
+                             th:text="${rv.hostReply}">
+                            호스트 답변 내용
+                        </div>
+                        <div style="font-size:12px; color:#aa8c7a; margin-top:4px;"
+                             th:if="${rv.hostReplyCreatedAt != null}"
+                             th:text="${#temporals.format(rv.hostReplyCreatedAt, 'yyyy-MM-dd HH:mm')}">
+                            2025-01-01 12:00
+                        </div>
+                    </div>
+
+                    <!-- 🔸 이 숙소의 호스트일 때만: 답변 작성/삭제 UI -->
+                    <div th:if="${isOwner}" style="margin-top:8px;">
+
+                        <!-- 아직 답변이 없을 때: 답변 작성 폼 -->
+                        <div th:if="${rv.hostReply == null}">
+                            <form th:action="@{/reviews/{reviewId}/reply(reviewId=${rv.id})}"
+                                  method="post"
+                                  style="display:flex; flex-direction:column; gap:6px;">
+                                <textarea name="replyContent"
+                                          placeholder="이 후기에 대한 답변을 작성하세요."
+                                          style="width:100%; min-height:60px; padding:8px; border-radius:8px; border:1px solid #e0d1c7; font-size:13px;"
+                                          required></textarea>
+                                <div style="text-align:right;">
+                                    <button type="submit"
+                                            style="padding:6px 10px; font-size:13px; border:none; border-radius:8px; background:#5c3d2e; color:#fff; cursor:pointer;">
+                                        답변 등록
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 답변이 있을 때: 답변 삭제 버튼 -->
+                        <div th:if="${rv.hostReply != null}" style="margin-top:4px; text-align:right;">
+                            <form th:action="@{/reviews/{reviewId}/reply/delete(reviewId=${rv.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('이 답변을 삭제할까요?');">
+                                <button type="submit"
+                                        style="padding:4px 8px; font-size:12px; border:none; border-radius:8px; background:#cda18a; color:#fff; cursor:pointer;">
+                                    답변 삭제
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 내 후기일 때만 삭제 -->
+                <div th:if="${session.loginUser != null && rv.author != null && rv.author.userId == session.loginUser.userId}">
+                    <form th:action="@{/reviews/{rid}/delete(rid=${rv.id})}" method="post"
+                          onsubmit="return confirm('후기를 삭제할까요?')">
+                        <input type="hidden" name="accommodationId" th:value="${accommodation.id}">
+                        <button type="submit"
+                                style="background:#cda18a;border:none;color:#fff;border-radius:8px;padding:8px 10px;cursor:pointer;">
+                            삭제
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ 오른쪽: 예약 패널 ============ -->
+    <div class="panel">
+        <!-- 제목 + 위시리스트 버튼 -->
+        <div class="title-row">
+            <h2 th:text="${accommodation.name}">숙소 이름</h2>
+
+            <!-- 로그인 + 게스트 + 호스트가 아닌 경우에만 위시 버튼 -->
+            <div th:if="${session.loginUser != null and !isOwner}">
+                <form th:action="@{/wishlist/toggle}"
+                      method="post"
+                      class="wish-form">
+                    <input type="hidden" name="accommodationId" th:value="${accommodation.id}">
+                    <button type="submit"
+                            class="wish-btn"
+                            th:classappend="${isWish} ? ' is-active' : ''">
+                        <span class="heart-icon" aria-hidden="true">
+                            <svg class="heart-svg" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.22 2.53C11.09 5.01 12.76 4 14.5 4 17 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </span>
+                        <span>위시리스트</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <p class="host-meta"><strong>위치:</strong> <span th:text="${accommodation.location}"></span></p>
+        <p class="host-meta">
+            <strong>가격:</strong>
+            ₩<span th:text="${#numbers.formatDecimal(accommodation.price, 0, 'COMMA', 0, 'POINT')}"></span> /박
+        </p>
+
+        <p class="host-meta">
+            <strong>호스트:</strong>
+            <span th:text="${hostNickname != null ? hostNickname : '호스트'}">호스트</span>
+
+            <a th:if="${!isOwner and session.loginUser != null and hostId != null}"
+               th:href="@{'/chat'(roomId=${'acc-' + accommodation.id + '-host-' + hostId + '-guest-' + session.loginUser.userId})}"
+               style="display:inline-block;margin-left:8px;padding:6px 10px;border-radius:10px;background:#111;color:#fff;text-decoration:none;">
+                채팅
+            </a>
+
+            <a th:if="${session.loginUser == null}"
+               th:href="@{'/login'(redirect=${'/accommodations/' + accommodation.id})}"
+               style="display:inline-block;margin-left:8px;padding:6px 10px;border-radius:10px;background:#111;color:#fff;text-decoration:none;">
+                채팅
+            </a>
+        </p>
+
+        <!-- ✅ 호스트일 때: 수정/삭제 + 예약 현황 -->
+        <div th:if="${isOwner}">
+            <div class="btn-row">
+                <a th:href="@{/accommodations/{id}/edit(id=${accommodation.id})}" class="btn">수정</a>
+                <form th:action="@{/accommodations/{id}/delete(id=${accommodation.id})}"
+                      method="post"
+                      style="display:inline"
+                      onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                    <button type="submit" class="btn btn-danger" style="border:none;cursor:pointer">삭제</button>
+                </form>
+            </div>
+
+            <div class="host-stats">
+                <div class="stats-title">숙소 예약 현황</div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">이번 달 예약 건수</div>
+                        <div class="stat-value"
+                             th:text="${thisMonthReservationCount} + '건'">0건</div>
+                    </div>
+
+                    <div class="stat-box">
+                        <div class="stat-label">누적 예약 건수</div>
+                        <div class="stat-value"
+                             th:text="${totalReservationCount} + '건'">0건</div>
+                    </div>
+                </div>
+
+                <div class="stats-divider"></div>
+
+                <div class="month-stats">
+                    <div class="month-title">지난 예약 기록</div>
+
+                    <form th:action="@{'/accommodations/' + ${accommodation.id}}"
+                          method="get"
+                          class="month-select-row">
+                        <select name="month" class="month-select">
+                            <option value="" disabled
+                                    th:selected="${selectedMonth == null}">월 선택</option>
+                            <option th:each="m : ${pastMonths}"
+                                    th:value="${m.value}"
+                                    th:text="${m.label}"
+                                    th:selected="${selectedMonth != null} ? ${selectedMonth} == ${m.value} : false">
+                            </option>
+                        </select>
+                        <button type="submit" class="month-btn">조회</button>
+                    </form>
+
+                    <div class="month-count" th:if="${selectedMonth != null}">
+                        <span th:text="${selectedMonthLabel}">2025년 1월</span>
+                        <span> 총 예약 </span>
+                        <strong th:text="${selectedMonthReservationCount}">0</strong>건
+                    </div>
+
+                    <div class="month-count muted" th:if="${selectedMonth == null}">
+                        조회할 달을 선택하면 해당 달의 총 예약 건수를 보여줍니다.
+                    </div>
+
+                    <div id="monthCalendar"
+                         class="month-calendar"
+                         th:if="${selectedMonth != null}"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ 게스트일 때: 예약 폼 -->
+        <form class="booking-form" method="post" th:action="@{/reservations/book}" th:unless="${isOwner}">
+            <input type="hidden" name="accommodationId" th:value="${accommodation.id}">
+            <input type="hidden" name="userId" value="1">
+
+            <label for="checkIn">체크인 날짜</label>
+            <input type="text" id="checkIn" name="checkIn" required readonly>
+
+            <label for="checkOut">체크아웃 날짜</label>
+            <input type="text" id="checkOut" name="checkOut" required readonly>
+
+            <label for="guestCount">인원 수</label>
+            <input type="number" id="guestCount" name="guestCount" min="1"
+                   th:attr="max=${accommodation.maxGuests}" required>
+
+            <button type="submit">예약하기</button>
+            <div class="total-price" id="totalPriceDisplay"></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function changeMainImage(el) {
+        const main = document.getElementById("mainImage");
+        main.src = el.src;
+        document.querySelectorAll(".thumbnail").forEach(t => t.classList.remove("active"));
+        el.classList.add("active");
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+
+<script th:inline="javascript">
+    flatpickr.localize(flatpickr.l10ns.ko);
+    const bookedDates = /*[[${bookedDates}]]*/ [];
+
+    const selectedMonthValue = /*[[${selectedMonth}]]*/ null;
+    const selectedMonthReservedDates = /*[[${selectedMonthReservedDates}]]*/ [];
+
+    const checkInInput = document.getElementById("checkIn");
+    const checkOutInput = document.getElementById("checkOut");
+    const guestCountInput = document.getElementById("guestCount");
+    const totalPriceDisplay = document.getElementById("totalPriceDisplay");
+    const pricePerNight = /*[[${accommodation.price}]]*/ 100000;
+
+    function calculateTotalPrice() {
+        if (!checkInInput || !checkOutInput || !totalPriceDisplay) return;
+        const checkIn = new Date(checkInInput.value);
+        const checkOut = new Date(checkOutInput.value);
+        if (checkIn && checkOut && checkOut > checkIn) {
+            const nights = (checkOut - checkIn) / (1000*60*60*24);
+            const total = nights * pricePerNight;
+            totalPriceDisplay.textContent = `💰 총액: ₩${total.toLocaleString()} (${nights}박)`;
+        } else {
+            totalPriceDisplay.textContent = '';
+        }
+    }
+
+    if (document.getElementById("checkIn")) {
+        const checkInPicker = flatpickr("#checkIn", {
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            disable: bookedDates,
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0) {
+                    const minCheckout = new Date(selectedDates[0]);
+                    minCheckout.setDate(minCheckout.getDate() + 1);
+                    checkOutPicker.set("minDate", minCheckout);
+                    checkOutPicker.set("disable", bookedDates.filter(d => new Date(d) <= minCheckout));
+                    calculateTotalPrice();
+                }
+            }
+        });
+
+        const checkOutPicker = flatpickr("#checkOut", {
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            disable: bookedDates,
+            onChange: calculateTotalPrice
+        });
+
+        if (guestCountInput) {
+            guestCountInput.addEventListener("input", calculateTotalPrice);
+        }
+    }
+
+    (function() {
+        const calEl = document.getElementById('monthCalendar');
+        if (!calEl || !selectedMonthValue || selectedMonthValue === 'null') return;
+
+        const parts = selectedMonthValue.split('-');
+        if (parts.length < 2) return;
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+
+        const firstDay = new Date(year, month - 1, 1);
+
+        flatpickr(calEl, {
+            inline: true,
+            dateFormat: "Y-m-d",
+            defaultDate: firstDay,
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const dateObj = dayElem.dateObj;
+                const iso = dateObj.toISOString().slice(0, 10); // "yyyy-MM-dd"
+                if (selectedMonthReservedDates.indexOf(iso) !== -1) {
+                    dayElem.classList.add("is-booked-day");
+                }
+            }
+        });
+    })();
+</script>
+
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=eac33428a454120406f8ea347d010ea1&libraries=services"></script>
+
+<script th:inline="javascript">
+    window.addEventListener('load', function () {
+        const LAT_VAL = /*[[${accommodation.latitude}]]*/ null;
+        const LNG_VAL = /*[[${accommodation.longitude}]]*/ null;
+        const NAME    = /*[[${accommodation.name}]]*/ '';
+
+        const container = document.getElementById('map');
+        if (!container) return;
+
+        function toNumber(v) {
+            if (v == null) return null;
+            const n = parseFloat(v);
+            return isNaN(n) ? null : n;
+        }
+
+        const lat = toNumber(LAT_VAL);
+        const lng = toNumber(LNG_VAL);
+
+        const center = (lat != null && lng != null)
+            ? new kakao.maps.LatLng(lat, lng)
+            : new kakao.maps.LatLng(37.5665, 126.9780);
+
+        const map = new kakao.maps.Map(container, {
+            center: center,
+            level: 3
+        });
+
+        if (lat != null && lng != null) {
+            const marker = new kakao.maps.Marker({ position: center });
+            marker.setMap(map);
+
+            const iw = new kakao.maps.InfoWindow({
+                content: '<div style="padding:6px 10px;">' + NAME + '</div>'
+            });
+            kakao.maps.event.addListener(marker, 'click', function () {
+                iw.open(map, marker);
+            });
+        }
+    });
+</script>
+
+<script>
+    (function(){
+        const stars = document.querySelectorAll('.rating-star');
+        const hiddenInput = document.getElementById('ratingInput');
+        const hint = document.getElementById('ratingHint');
+        if (!stars.length || !hiddenInput) return;
+
+        const messages = {
+            1: '1점 · 많이 아쉬웠어요',
+            2: '2점 · 기대에 못 미쳤어요',
+            3: '3점 · 보통이에요',
+            4: '4점 · 만족했어요',
+            5: '5점 · 아주 만족했어요!'
+        };
+
+        let current = 0;
+
+        function apply(value){
+            current = value;
+            hiddenInput.value = value;
+            stars.forEach(st => {
+                const v = Number(st.dataset.value);
+                st.classList.toggle('is-active', v <= value);
+                st.classList.remove('is-hover');
+            });
+            hint.textContent = value > 0
+                ? (messages[value] || `${value}점 선택됨`)
+                : '별을 눌러 평점을 선택해주세요.';
+        }
+
+        function hover(value){
+            stars.forEach(st => {
+                const v = Number(st.dataset.value);
+                st.classList.toggle('is-hover', v <= value);
+            });
+        }
+
+        stars.forEach(star => {
+            const value = Number(star.dataset.value || '0');
+            star.addEventListener('click', () => apply(value));
+            star.addEventListener('mouseenter', () => hover(value));
+            star.addEventListener('mouseleave', () => hover(current));
+
+            star.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    apply(value);
+                }
+            });
+        });
+    })();
+</script>
+
+</body>
+</html>

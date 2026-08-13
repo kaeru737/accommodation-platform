@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>내 예약 목록</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #fffdf9;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        h2 {
+            color: #5c3d2e;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            background-color: #fff;
+        }
+
+        .card h3 {
+            color: #5c3d2e;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            margin: 4px 0;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .actions a,
+        .actions form button {
+            padding: 6px 12px;
+            background-color: #a9744f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .actions form button:hover,
+        .actions a:hover {
+            background-color: #8a5d3d;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 18px;
+            background-color: #5c3d2e;
+            color: white;
+            border-radius: 30px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>내 예약 목록</h2>
+
+    <div th:if="${#lists.isEmpty(reservations)}">
+        <p>예약 내역이 없습니다.</p>
+    </div>
+
+    <div th:each="res : ${reservations}" class="card">
+        <h3 th:text="${res.accommodation.name}">숙소명</h3>
+        <p th:text="'체크인: ' + ${res.checkInDate} + ' / 체크아웃: ' + ${res.checkOutDate}">기간</p>
+        <p th:text="'인원 수: ' + ${res.guestCount} + '명 / 총 가격: ₩' + ${#numbers.formatDecimal(res.totalPrice, 0, 'COMMA', 0, 'POINT')}">가격</p>
+
+        <div class="actions">
+            <!-- 상세 보기 -->
+            <a th:href="@{'/reservations/' + ${res.id}}">상세 보기</a>
+
+            <!-- 예약 취소 -->
+            <form th:action="@{'/reservations/' + ${res.id} + '/cancel'}" method="post"
+                  onsubmit="return confirm('정말로 예약을 취소하시겠습니까?');">
+                <button type="submit">취소</button>
+            </form>
+        </div>
+    </div>
+
+    <a href="/" class="back-btn">← 메인으로</a>
+</div>
+</body>
+</html>
